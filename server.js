@@ -12,6 +12,7 @@ const DB_NAME = 'phishguard';
 const USERS_COLLECTION = 'users';
 const uri = process.env.MONGODB_URI;
 
+
 const allowedOrigins = new Set([
   'http://localhost:3000',
   'http://127.0.0.1:3000',

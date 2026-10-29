@@ -5,8 +5,8 @@ import { MongoClient } from 'mongodb';
 import bcrypt from 'bcrypt';
 
 const app = express();
-const PORT = 3003;
-const HOST = '127.0.0.1';
+const PORT = process.env.PORT || 3003;
+const HOST = '0.0.0.0';
 const DB_NAME = 'phishguard';
 const USERS_COLLECTION = 'users';
 const uri = process.env.MONGODB_URI;

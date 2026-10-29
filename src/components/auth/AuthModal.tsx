@@ -91,7 +91,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     try {
       const response = await fetch(
-        `http://localhost:3003/api/auth/${mode}`,
+        `https://cybershield-phishing-api.onrender.com/api/auth/${mode}`,
         {
           method: 'POST',
           headers: {

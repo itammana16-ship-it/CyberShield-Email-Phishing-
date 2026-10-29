@@ -5,6 +5,7 @@ import { MongoClient } from 'mongodb';
 import bcrypt from 'bcrypt';
 
 const app = express();
+
 const PORT = process.env.PORT || 3003;
 const HOST = '0.0.0.0';
 const DB_NAME = 'phishguard';
@@ -15,11 +16,11 @@ const allowedOrigins = new Set([
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'http://localhost:3001',
-  'http://127.0.0.1:3001'
+  'http://127.0.0.1:3001',
+  'https://cybershield-email-phishing.onrender.com'
 ]);
 
-app.use(express.json({ limit: '1mb' }));
-
+// CORS configuration
 app.use((req, res, next) => {
   const origin = req.headers.origin;
 
@@ -32,6 +33,7 @@ app.use((req, res, next) => {
     'Access-Control-Allow-Methods',
     'GET, POST, PUT, PATCH, DELETE, OPTIONS'
   );
+
   res.setHeader(
     'Access-Control-Allow-Headers',
     'Content-Type, Authorization'
@@ -43,6 +45,8 @@ app.use((req, res, next) => {
 
   next();
 });
+
+app.use(express.json({ limit: '1mb' }));
 
 let client;
 let db;
@@ -56,22 +60,18 @@ function escapeRegex(value) {
 }
 
 function safeUser(user) {
-  const {
-    passwordHash,
-    _id,
-    ...result
-  } = user;
-
+  const { passwordHash, _id, ...result } = user;
   return result;
 }
 
+// Health check
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
 async function startServer() {
   if (!uri) {
-    console.error('MONGODB_URI পাওয়া যায়নি। .env ফাইল চেক করো।');
+    console.error('MONGODB_URI environment variable is missing.');
     process.exit(1);
   }
 
@@ -79,6 +79,7 @@ async function startServer() {
 
   try {
     await client.connect();
+
     db = client.db(DB_NAME);
 
     await db.collection(USERS_COLLECTION).createIndex(
@@ -87,8 +88,10 @@ async function startServer() {
     );
 
     await db.command({ ping: 1 });
+
     console.log('MongoDB connected successfully!');
 
+    // Register
     app.post('/api/auth/register', async (req, res) => {
       try {
         const username =
@@ -160,12 +163,14 @@ async function startServer() {
         });
       } catch (error) {
         console.error('Registration failed:', error.message);
+
         return res.status(500).json({
           error: 'Registration failed.'
         });
       }
     });
 
+    // Login
     app.post('/api/auth/login', async (req, res) => {
       try {
         const email =
@@ -205,6 +210,7 @@ async function startServer() {
         }
 
         const users = db.collection(USERS_COLLECTION);
+
         const user = await users.findOne({
           $or: conditions
         });
@@ -235,12 +241,14 @@ async function startServer() {
         });
       } catch (error) {
         console.error('Login failed:', error.message);
+
         return res.status(500).json({
           error: 'Login failed.'
         });
       }
     });
 
+    // Get users
     app.get('/api/users', async (_req, res) => {
       try {
         const users = await db
@@ -249,16 +257,18 @@ async function startServer() {
           .limit(500)
           .toArray();
 
-        return res.json(users);
+        return res.json(users.map(safeUser));
       } catch (error) {
         console.error('Could not fetch users:', error.message);
+
         return res.status(500).json({
           error: 'Could not fetch users.'
         });
       }
     });
 
-    // Local testing endpoint; do not expose publicly without authentication.
+    // Create/update a basic user record.
+    // Protect this endpoint with authentication before production use.
     app.post('/api/users', async (req, res) => {
       try {
         const user = req.body;
@@ -276,6 +286,8 @@ async function startServer() {
         }
 
         const { passwordHash, _id, ...safeInput } = user;
+
+        // Never allow this endpoint to create admin accounts.
         delete safeInput.role;
 
         const result = await db
@@ -297,12 +309,14 @@ async function startServer() {
         });
       } catch (error) {
         console.error('Could not save user:', error.message);
+
         return res.status(500).json({
           error: 'Could not save user.'
         });
       }
     });
 
+    // Get scans
     app.get('/api/scans', async (_req, res) => {
       try {
         const scans = await db
@@ -315,12 +329,14 @@ async function startServer() {
         return res.json(scans);
       } catch (error) {
         console.error('Could not fetch scans:', error.message);
+
         return res.status(500).json({
           error: 'Could not fetch scans.'
         });
       }
     });
 
+    // Save a scan
     app.post('/api/scans', async (req, res) => {
       try {
         const scan = req.body;
@@ -339,7 +355,9 @@ async function startServer() {
             'ai_image',
             'message'
           ].includes(scan.type) ||
-          !['safe', 'suspicious', 'phishing'].includes(scan.threatLevel)
+          !['safe', 'suspicious', 'phishing'].includes(
+            scan.threatLevel
+          )
         ) {
           return res.status(400).json({
             error: 'Invalid scan data.'
@@ -352,9 +370,12 @@ async function startServer() {
           { upsert: true }
         );
 
-        return res.status(201).json({ success: true });
+        return res.status(201).json({
+          success: true
+        });
       } catch (error) {
         console.error('Could not save scan:', error.message);
+
         return res.status(500).json({
           error: 'Could not save scan.'
         });
@@ -362,11 +383,13 @@ async function startServer() {
     });
 
     app.listen(PORT, HOST, () => {
-      console.log(`Backend running at http://localhost:${PORT}`);
+      console.log(`Backend listening on ${HOST}:${PORT}`);
     });
   } catch (error) {
     console.error('Backend startup failed:', error.message);
+
     await client.close().catch(() => {});
+
     process.exit(1);
   }
 }

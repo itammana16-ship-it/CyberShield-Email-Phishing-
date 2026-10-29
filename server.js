@@ -21,6 +21,7 @@ const allowedOrigins = new Set([
   'https://cybershield-email-phishing.onrender.com'
 ]);
 
+
 // CORS configuration
 app.use((req, res, next) => {
   const origin = req.headers.origin;

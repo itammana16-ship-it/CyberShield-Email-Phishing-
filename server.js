@@ -3,6 +3,7 @@ import 'dotenv/config';
 import express from 'express';
 import { MongoClient } from 'mongodb';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 const app = express();
 
@@ -11,7 +12,7 @@ const HOST = '0.0.0.0';
 const DB_NAME = 'phishguard';
 const USERS_COLLECTION = 'users';
 const uri = process.env.MONGODB_URI;
-
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const allowedOrigins = new Set([
   'http://localhost:3000',
@@ -20,7 +21,6 @@ const allowedOrigins = new Set([
   'http://127.0.0.1:3001',
   'https://cybershield-email-phishing.onrender.com'
 ]);
-
 
 // CORS configuration
 app.use((req, res, next) => {
@@ -66,6 +66,42 @@ function safeUser(user) {
   return result;
 }
 
+// JWT authentication
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  const token = authHeader?.startsWith('Bearer ')
+    ? authHeader.slice(7)
+    : null;
+
+  if (!token) {
+    return res.status(401).json({
+      error: 'Access token required.'
+    });
+  }
+
+  try {
+    req.authUser = jwt.verify(token, JWT_SECRET);
+
+    next();
+  } catch {
+    return res.status(401).json({
+      error: 'Invalid or expired token.'
+    });
+  }
+}
+
+// Admin-only authorization
+function requireAdmin(req, res, next) {
+  if (req.authUser?.role !== 'admin') {
+    return res.status(403).json({
+      error: 'Admin access required.'
+    });
+  }
+
+  next();
+}
+
 // Health check
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
@@ -77,6 +113,11 @@ async function startServer() {
     process.exit(1);
   }
 
+  if (!JWT_SECRET || JWT_SECRET.length < 32) {
+    console.error('JWT_SECRET is missing or too short.');
+    process.exit(1);
+  }
+
   client = new MongoClient(uri);
 
   try {
@@ -84,7 +125,9 @@ async function startServer() {
 
     db = client.db(DB_NAME);
 
-    await db.collection(USERS_COLLECTION).createIndex(
+    const usersCollection = db.collection(USERS_COLLECTION);
+
+    await usersCollection.createIndex(
       { id: 1 },
       { unique: true }
     );
@@ -120,9 +163,7 @@ async function startServer() {
           });
         }
 
-        const users = db.collection(USERS_COLLECTION);
-
-        const existingUser = await users.findOne({
+        const existingUser = await usersCollection.findOne({
           $or: [
             { email },
             {
@@ -157,7 +198,7 @@ async function startServer() {
           lastLogin: now
         };
 
-        await users.insertOne(newUser);
+        await usersCollection.insertOne(newUser);
 
         return res.status(201).json({
           success: true,
@@ -211,9 +252,7 @@ async function startServer() {
           });
         }
 
-        const users = db.collection(USERS_COLLECTION);
-
-        const user = await users.findOne({
+        const user = await usersCollection.findOne({
           $or: conditions
         });
 
@@ -229,13 +268,24 @@ async function startServer() {
 
         const lastLogin = new Date().toISOString();
 
-        await users.updateOne(
+        await usersCollection.updateOne(
           { id: user.id },
           { $set: { lastLogin } }
         );
 
+        const accessToken = jwt.sign(
+          {
+            id: user.id,
+            email: user.email,
+            role: user.role
+          },
+          JWT_SECRET,
+          { expiresIn: '1h' }
+        );
+
         return res.json({
           success: true,
+          accessToken,
           user: {
             ...safeUser(user),
             lastLogin
@@ -250,51 +300,56 @@ async function startServer() {
       }
     });
 
-    // Get users
-    app.get('/api/users', async (_req, res) => {
-      try {
-        const users = await db
-          .collection(USERS_COLLECTION)
-          .find({}, { projection: { passwordHash: 0 } })
-          .limit(500)
-          .toArray();
+    // Get users - Admin only
+    app.get(
+      '/api/users',
+      authenticateToken,
+      requireAdmin,
+      async (_req, res) => {
+        try {
+          const users = await usersCollection
+            .find({}, { projection: { passwordHash: 0 } })
+            .limit(500)
+            .toArray();
 
-        return res.json(users.map(safeUser));
-      } catch (error) {
-        console.error('Could not fetch users:', error.message);
+          return res.json(users.map(safeUser));
+        } catch (error) {
+          console.error('Could not fetch users:', error.message);
 
-        return res.status(500).json({
-          error: 'Could not fetch users.'
-        });
-      }
-    });
-
-    // Create/update a basic user record.
-    // Protect this endpoint with authentication before production use.
-    app.post('/api/users', async (req, res) => {
-      try {
-        const user = req.body;
-
-        if (
-          !user ||
-          !isValidId(user.id) ||
-          typeof user.email !== 'string' ||
-          typeof user.username !== 'string' ||
-          !['admin', 'user'].includes(user.role)
-        ) {
-          return res.status(400).json({
-            error: 'Invalid user data.'
+          return res.status(500).json({
+            error: 'Could not fetch users.'
           });
         }
+      }
+    );
 
-        const { passwordHash, _id, ...safeInput } = user;
+    // Create/update a basic user record - Admin only
+    app.post(
+      '/api/users',
+      authenticateToken,
+      requireAdmin,
+      async (req, res) => {
+        try {
+          const user = req.body;
 
-        // Never allow this endpoint to create admin accounts.
-        delete safeInput.role;
+          if (
+            !user ||
+            !isValidId(user.id) ||
+            typeof user.email !== 'string' ||
+            typeof user.username !== 'string' ||
+            !['admin', 'user'].includes(user.role)
+          ) {
+            return res.status(400).json({
+              error: 'Invalid user data.'
+            });
+          }
 
-        const result = await db
-          .collection(USERS_COLLECTION)
-          .updateOne(
+          const { passwordHash, _id, ...safeInput } = user;
+
+          // Never allow this endpoint to create admin accounts.
+          delete safeInput.role;
+
+          const result = await usersCollection.updateOne(
             { id: user.id },
             {
               $setOnInsert: {
@@ -305,18 +360,75 @@ async function startServer() {
             { upsert: true }
           );
 
-        return res.json({
-          success: true,
-          inserted: result.upsertedCount === 1
-        });
-      } catch (error) {
-        console.error('Could not save user:', error.message);
+          return res.json({
+            success: true,
+            inserted: result.upsertedCount === 1
+          });
+        } catch (error) {
+          console.error('Could not save user:', error.message);
 
-        return res.status(500).json({
-          error: 'Could not save user.'
-        });
+          return res.status(500).json({
+            error: 'Could not save user.'
+          });
+        }
       }
-    });
+    );
+
+    // Delete user - Admin only
+    app.delete(
+      '/api/users/:id',
+      authenticateToken,
+      requireAdmin,
+      async (req, res) => {
+        try {
+          const userId = req.params.id;
+
+          if (!isValidId(userId)) {
+            return res.status(400).json({
+              error: 'Invalid user ID.'
+            });
+          }
+
+          if (userId === req.authUser.id) {
+            return res.status(403).json({
+              error: 'You cannot delete your own admin account.'
+            });
+          }
+
+          const targetUser = await usersCollection.findOne({
+            id: userId
+          });
+
+          if (!targetUser) {
+            return res.status(404).json({
+              error: 'User not found.'
+            });
+          }
+
+          if (targetUser.role === 'admin') {
+            return res.status(403).json({
+              error: 'Admin accounts cannot be deleted.'
+            });
+          }
+
+          await usersCollection.deleteOne({
+            id: userId,
+            role: { $ne: 'admin' }
+          });
+
+          return res.json({
+            success: true,
+            message: 'User deleted successfully.'
+          });
+        } catch (error) {
+          console.error('Could not delete user:', error.message);
+
+          return res.status(500).json({
+            error: 'Could not delete user.'
+          });
+        }
+      }
+    );
 
     // Get scans
     app.get('/api/scans', async (_req, res) => {

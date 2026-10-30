@@ -118,6 +118,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
 
       const authenticatedUser = data.user as User;
+      if (mode === 'login') {
+  if (!data.accessToken) {
+    throw new Error('Access token was not returned by the server.');
+   }
+
+   sessionStorage.setItem('phishguard_access_token', data.accessToken);
+  }
 
       // Admin Login must accept only an account with admin role.
       if (adminOnly && authenticatedUser.role !== 'admin') {

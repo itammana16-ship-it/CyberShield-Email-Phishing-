@@ -36,7 +36,9 @@ const [currentUser, setCurrentUser] = useState<User | null>(
   const [users, setUsers] = useState<User[]>(() =>
     Storage.getUsers()
   );
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [activeTab, setActiveTab] = useState<string>(
+  () => sessionStorage.getItem('phishguard_active_tab') || 'dashboard'
+  );
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authType, setAuthType] = useState<AuthType>('user');
@@ -45,6 +47,9 @@ const [currentUser, setCurrentUser] = useState<User | null>(
     const theme = Storage.getThemeSettings();
     Storage.applyThemeToDOM(theme);
   }, []);
+  useEffect(() => {
+   sessionStorage.setItem('phishguard_active_tab', activeTab);
+  }, [activeTab]);
 
   const openUserLogin = () => {
     setAuthType('user');

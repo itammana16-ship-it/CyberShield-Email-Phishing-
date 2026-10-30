@@ -204,6 +204,12 @@ export const AdminUserList: React.FC<AdminUserListProps> = ({
                 scan.threatLevel === 'phishing'
             ).length;
 
+            const userSafeCount = scans.filter(
+              scan =>
+                scan.userId === user.id &&
+                scan.threatLevel !== 'phishing'
+            ).length;
+
             const isMasterAdmin = user.role === 'admin';
 
             return (
@@ -246,32 +252,26 @@ export const AdminUserList: React.FC<AdminUserListProps> = ({
                     </span>
                   </div>
 
-                  <div className="space-y-1.5 py-2 border-y border-slate-800/60 text-xs">
+                  {/* Scan Statistics */}
+                  <div className="space-y-2 py-3 border-y border-slate-800/60 text-xs">
                     <div className="flex justify-between text-slate-400">
-                      <span>Organization:</span>
-                      <span className="text-slate-200 font-medium truncate max-w-[140px]">
-                        {user.organization || 'SOC Core'}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between text-slate-400">
-                      <span>Clearance:</span>
-                      <span className="text-slate-200 font-medium">
-                        {user.securityClearance || 'Level 1'}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between text-slate-400">
-                      <span>Total Scans Logged:</span>
+                      <span>Total Scans:</span>
                       <span className="font-mono font-bold text-cyan-300 tabular-nums">
                         {userScanCount}
                       </span>
                     </div>
 
                     <div className="flex justify-between text-slate-400">
-                      <span>Phishing Intercepted:</span>
+                      <span>Phishing Detected:</span>
                       <span className="font-mono font-bold text-rose-400 tabular-nums">
                         {userPhishCount}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between text-slate-400">
+                      <span>Real / Safe Detected:</span>
+                      <span className="font-mono font-bold text-emerald-400 tabular-nums">
+                        {userSafeCount}
                       </span>
                     </div>
                   </div>

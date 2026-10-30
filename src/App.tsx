@@ -27,7 +27,9 @@ import { AdminUserList } from './components/admin/AdminUserList';
 type AuthType = 'user' | 'admin';
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+const [currentUser, setCurrentUser] = useState<User | null>(
+  () => Storage.getActiveSession()
+);
   const [scans, setScans] = useState<ScanResult[]>(() =>
     Storage.getScans()
   );

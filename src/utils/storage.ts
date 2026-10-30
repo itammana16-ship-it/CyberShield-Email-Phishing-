@@ -1,3 +1,4 @@
+
 import { User, ScanResult, ThemeSettings } from '../types';
 
 const USERS_STORAGE_KEY = 'phishguard_users_db';
@@ -5,7 +6,7 @@ const SCANS_STORAGE_KEY = 'phishguard_scans_db';
 const SESSION_KEY = 'phishguard_active_session';
 const THEME_KEY = 'phishguard_theme_settings';
 
-// Seed Initial Users (Single unique Master Admin + sample verified users)
+// Seed Initial Users
 const INITIAL_USERS: User[] = [
   {
     id: 'usr_admin_001',
@@ -27,19 +28,9 @@ const INITIAL_USERS: User[] = [
     securityClearance: 'Security Analyst L2',
     lastLogin: '2026-10-27T18:45:00Z'
   },
-  {
-    id: 'usr_emp_204',
-    username: 'david_it',
-    email: 'david.tech@corpnet.org',
-    role: 'user',
-    createdAt: '2026-03-01T09:12:00Z',
-    organization: 'Infrastructure & Cloud IT',
-    securityClearance: 'Tier 1 Analyst',
-    lastLogin: '2026-10-25T14:22:00Z'
-  },
 ];
 
-// Seed Initial Scans so History and Analytics are rich right away
+// Seed Initial Scans
 const INITIAL_SCANS: ScanResult[] = [
   {
     id: 'scn_901',
@@ -204,10 +195,12 @@ export const DEFAULT_THEME: ThemeSettings = {
 export const Storage = {
   getUsers(): User[] {
     const raw = localStorage.getItem(USERS_STORAGE_KEY);
+
     if (!raw) {
       localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(INITIAL_USERS));
       return INITIAL_USERS;
     }
+
     try {
       return JSON.parse(raw);
     } catch {
@@ -217,34 +210,43 @@ export const Storage = {
 
   saveUser(newUser: User): void {
     const users = this.getUsers();
-    // Verify unique email
-    const existingIndex = users.findIndex(u => u.email.toLowerCase() === newUser.email.toLowerCase());
+
+    const existingIndex = users.findIndex(
+      u => u.email.toLowerCase() === newUser.email.toLowerCase()
+    );
+
     if (existingIndex >= 0) {
       users[existingIndex] = newUser;
     } else {
       users.push(newUser);
     }
+
     localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
   },
 
   removeUser(userId: string): boolean {
     const users = this.getUsers();
-    // Master admin cannot be removed
+
     const target = users.find(u => u.id === userId);
+
     if (target?.role === 'admin') {
       return false;
     }
+
     const filtered = users.filter(u => u.id !== userId);
     localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(filtered));
+
     return true;
   },
 
   getScans(): ScanResult[] {
     const raw = localStorage.getItem(SCANS_STORAGE_KEY);
+
     if (!raw) {
       localStorage.setItem(SCANS_STORAGE_KEY, JSON.stringify(INITIAL_SCANS));
       return INITIAL_SCANS;
     }
+
     try {
       return JSON.parse(raw);
     } catch {
@@ -263,14 +265,14 @@ export const Storage = {
     return scans.filter(s => s.userId === userId);
   },
 
+  // Session survives refresh but normally ends when the tab/browser session closes.
   getActiveSession(): User | null {
-    const raw = localStorage.getItem(SESSION_KEY);
+    const raw = sessionStorage.getItem(SESSION_KEY);
+
     if (!raw) {
-      // Default to logged-in user (Analyst) for immediate seamless usage
-      const defaultUser = INITIAL_USERS[1];
-      localStorage.setItem(SESSION_KEY, JSON.stringify(defaultUser));
-      return defaultUser;
+      return null;
     }
+
     try {
       return JSON.parse(raw);
     } catch {
@@ -280,15 +282,17 @@ export const Storage = {
 
   setActiveSession(user: User | null): void {
     if (user) {
-      localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(user));
     } else {
-      localStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(SESSION_KEY);
     }
   },
 
   getThemeSettings(): ThemeSettings {
     const raw = localStorage.getItem(THEME_KEY);
+
     if (!raw) return DEFAULT_THEME;
+
     try {
       return { ...DEFAULT_THEME, ...JSON.parse(raw) };
     } catch {
@@ -303,6 +307,7 @@ export const Storage = {
 
   applyThemeToDOM(settings: ThemeSettings): void {
     const root = document.documentElement;
+
     root.style.setProperty('--theme-sidebar', settings.sidebarColor);
     root.style.setProperty('--theme-card', settings.cardColor);
     root.style.setProperty('--theme-accent', settings.accentColor);

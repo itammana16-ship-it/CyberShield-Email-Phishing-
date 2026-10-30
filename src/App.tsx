@@ -36,6 +36,33 @@ const [currentUser, setCurrentUser] = useState<User | null>(
   const [users, setUsers] = useState<User[]>(() =>
     Storage.getUsers()
   );
+  const fetchRegisteredUsers = async () => {
+  try {
+    const token = sessionStorage.getItem('phishguard_access_token');
+
+    if (!token) return;
+
+    const response = await fetch(
+      'https://cybershield-phishing-api.onrender.com/api/users',
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to load users');
+    }
+
+    const data: User[] = await response.json();
+    setUsers(data);
+  } catch (error) {
+    console.error('Failed to refresh dashboard users:', error);
+  }
+};
   const [activeTab, setActiveTab] = useState<string>(
   () => sessionStorage.getItem('phishguard_active_tab') || 'dashboard'
   );
@@ -50,6 +77,11 @@ const [currentUser, setCurrentUser] = useState<User | null>(
   useEffect(() => {
    sessionStorage.setItem('phishguard_active_tab', activeTab);
   }, [activeTab]);
+  useEffect(() => {
+  if (currentUser?.role === 'admin') {
+    fetchRegisteredUsers();
+  }
+}, [currentUser, activeTab]);
 
   const openUserLogin = () => {
     setAuthType('user');
@@ -87,7 +119,7 @@ const [currentUser, setCurrentUser] = useState<User | null>(
   };
 
   const handleUserRemoved = () => {
-    setUsers(Storage.getUsers());
+  fetchRegisteredUsers();
   };
 
   // Welcome page

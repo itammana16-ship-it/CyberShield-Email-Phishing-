@@ -32,8 +32,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const totalScans = scans.length;
   const phishingBlocked = scans.filter(s => s.threatLevel === 'phishing').length;
   const safeScans = scans.filter(s => s.threatLevel === 'safe').length;
-  const standardUsers = users.filter(u => u.role !== 'admin').length;
-
+  const standardUsers = users.filter(
+    u => u.role === 'user'
+  ).length;
   return (
     <div className="space-y-6">
       {/* Master Admin SOC Banner */}

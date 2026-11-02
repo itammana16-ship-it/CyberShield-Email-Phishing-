@@ -2,14 +2,39 @@
 import { ScanResult, ScanType, ThreatLevel } from '../types';
 
 // High-risk phishing keyword lexicons
+
 const PHISHING_KEYWORDS = [
-  'verify your account', 'account suspended', 'urgent action required',
-  'unusual sign-in activity', 'confirm password', 'wire transfer',
-  'cryptocurrency', 'tax refund', 'invoice attached', 'immediate response',
-  'compromised', 'click below to avoid deletion', 'security alert',
-  'reset credentials', 'gift card', 'winner', 'claim reward',
-  'billing failure', 'payroll direct deposit', 'kyc verification'
+  'verify your account',
+  'account suspended',
+  'urgent action required',
+  'unusual sign-in activity',
+  'confirm password',
+  'wire transfer',
+  'cryptocurrency',
+  'tax refund',
+  'invoice attached',
+  'immediate response',
+  'compromised',
+  'click below to avoid deletion',
+  'security alert',
+  'reset credentials',
+  'gift card',
+  'winner',
+  'claim reward',
+  'billing failure',
+  'payroll direct deposit',
+  'kyc verification',
+  'urgent',
+  'immediately',
+  'suspended',
+  'verify',
+  'password expired',
+  'account locked',
+  'click here',
+  'limited time',
+  'act now'
 ];
+
 
 const SUSPICIOUS_TLDS = [
   '.xyz', '.top', '.work', '.click', '.loan', '.buzz',

@@ -1,40 +1,91 @@
-
+import { createWorker } from 'tesseract.js';
 import { ScanResult, ScanType, ThreatLevel } from '../types';
 
 // High-risk phishing keyword lexicons
 
 const PHISHING_KEYWORDS = [
+  // Account security and verification
   'verify your account',
   'account suspended',
   'urgent action required',
   'unusual sign-in activity',
   'confirm password',
+  'password expired',
+  'account locked',
+  'reset credentials',
+  'security alert',
+  'your account has been compromised',
+  'unauthorized login',
+  'suspicious login attempt',
+  'verify your identity',
+
+  // Urgency and pressure
+  'immediate response',
+  'urgent',
+  'immediately',
+  'act now',
+  'limited time',
+  'expires today',
+  'expire today',
+  'final warning',
+  'last chance',
+  'within 24 hours',
+  'avoid account closure',
+
+  // Prize and lottery scams
+  'you have won',
+  'you won a prize',
+  'cash prize',
+  'claim your reward',
+  'claim reward',
+  'prize distribution',
+  'winner',
+  'congratulations you won',
+  'selected as a winner',
+  'reward will expire',
+  'claim your prize',
+  'lottery winner',
+  'free gift',
+  'claim your gift',
+
+  // Personal and financial information requests
+  'bank account details',
+  'personal information',
+  'credit card details',
+  'provide your banking information',
+  'confirm your bank details',
+  'send your password',
+  'share your otp',
+  'one time password',
+  'verify payment details',
+  'update payment information',
+
+  // Payment and financial scams
   'wire transfer',
   'cryptocurrency',
   'tax refund',
-  'invoice attached',
-  'immediate response',
-  'compromised',
-  'click below to avoid deletion',
-  'security alert',
-  'reset credentials',
-  'gift card',
-  'winner',
-  'claim reward',
   'billing failure',
+  'invoice attached',
+  'payment failed',
+  'outstanding payment',
+  'refund pending',
+  'gift card',
   'payroll direct deposit',
-  'kyc verification',
-  'urgent',
-  'immediately',
+
+  // Suspicious links and actions
+  'click here',
+  'click below to avoid deletion',
+  'open the attachment',
+  'download immediately',
+  'confirm your credentials',
+  'reset your password now',
+
+  // Other known phishing indicators
+  'compromised',
   'suspended',
   'verify',
-  'password expired',
-  'account locked',
-  'click here',
-  'limited time',
-  'act now'
+  'kyc verification'
 ];
-
 
 const SUSPICIOUS_TLDS = [
   '.xyz', '.top', '.work', '.click', '.loan', '.buzz',
@@ -151,14 +202,12 @@ export function runSvmEmailClassifier(
     Math.min(features.urlCount, 5)
   ];
 
-  // Weighted score
   let svmScore = 0;
 
   for (let i = 0; i < weights.length; i++) {
     svmScore += weights[i] * x[i];
   }
 
-  // Logistic Regression comparison score
   const lrWeights = [
     -1.6, 0.58, 1.35, 1.15, 0.78,
     0.68, 1.45, 0.45, 0.18
@@ -172,7 +221,6 @@ export function runSvmEmailClassifier(
 
   const lrProbability = 1 / (1 + Math.exp(-lrScore));
 
-  // Threat classification
   let threatLevel: ThreatLevel = 'safe';
   let confidence = 0;
   let riskScore = 0;
@@ -219,7 +267,6 @@ export function runSvmEmailClassifier(
     );
   }
 
-  // Generate diagnostic reasons
   if (threatLevel === 'phishing' || threatLevel === 'suspicious') {
 
     if (features.matchedKeywords.length > 0) {
@@ -322,9 +369,6 @@ export function runSvmEmailClassifier(
       'Extracted Links Total': features.urlCount
     },
 
-    // These are existing configured comparison values.
-    // They should not be presented as measured accuracy
-    // unless verified through an actual dataset evaluation.
     modelComparison: {
       svmAccuracy: 96.4,
       logisticRegressionAccuracy: 91.8,
@@ -489,185 +533,291 @@ export function analyzeUrl(inputUrl: string) {
 
 // QR Code Scanner Logic
 export function analyzeQrPayload(payload: string) {
-  const isUrl = /^https?:\/\//i.test(payload.trim());
+  const cleanPayload = payload.trim();
+
+  const isUrl = /^https?:\/\//i.test(cleanPayload);
+  const isWifi = /^WIFI:/i.test(cleanPayload);
+  const isVCard = /^BEGIN:VCARD/i.test(cleanPayload);
 
   const isCustomUri =
-    /^(intent|market|sms|tel|facetime|file|data):/i.test(payload.trim());
-
-  let reasons: string[] = [];
+    /^(intent|market|sms|tel|facetime|file|data):/i.test(cleanPayload);
 
   let threatLevel: ThreatLevel = 'safe';
+  let riskScore = 8;
+  let confidence = 97.0;
 
-  let riskScore = 12;
+  const reasons: string[] = [];
 
-  let confidence = 95.8;
+  let contentType = 'Plain Text';
 
-  if (isCustomUri) {
+  if (isWifi) {
+    contentType = 'Wi-Fi';
+
+    threatLevel = 'safe';
+    riskScore = 8;
+    confidence = 97.0;
+
+    reasons.push(
+      'A Wi-Fi configuration payload was detected. The presence of a network password alone is not evidence of phishing.'
+    );
+
+    reasons.push(
+      'No external URL or suspicious URI action was identified in this Wi-Fi payload.'
+    );
+
+  } else if (isVCard) {
+    contentType = 'vCard';
+
+    threatLevel = 'safe';
+    riskScore = 8;
+    confidence = 97.0;
+
+    reasons.push(
+      'A vCard contact-information payload was detected.'
+    );
+
+    reasons.push(
+      'Contact fields such as telephone numbers and email addresses are normal vCard data and are not treated as phishing indicators by themselves.'
+    );
+
+  } else if (isCustomUri) {
+    contentType =
+      /^tel:/i.test(cleanPayload) ? 'Telephone' :
+      /^sms:/i.test(cleanPayload) ? 'SMS' :
+      /^mailto:/i.test(cleanPayload) ? 'Email' :
+      'Custom URI';
+
     threatLevel = 'suspicious';
     riskScore = 65;
     confidence = 84.5;
 
     reasons.push(
-      'The QR payload contains a non-web URI scheme that should be reviewed before opening.'
+      'The QR payload contains a non-web URI action. Review its destination and intended action before using it.'
     );
 
   } else if (isUrl) {
-    const urlAnalysis = analyzeUrl(payload);
+    contentType = 'URL';
+
+    const urlAnalysis = analyzeUrl(cleanPayload);
 
     threatLevel = urlAnalysis.threatLevel;
     riskScore = urlAnalysis.riskScore;
     confidence = urlAnalysis.confidence;
 
-    reasons = [
-      'Decoded QR contains an external hyperlink: ' + payload,
-      ...urlAnalysis.reasons
-    ];
+    reasons.push(
+      'The QR payload contains a web URL.'
+    );
+
+    reasons.push(...urlAnalysis.reasons);
 
   } else {
-    if (/password|passcode|secret|api_key|bank/i.test(payload)) {
-      threatLevel = 'suspicious';
-      riskScore = 65;
-      confidence = 84.5;
+    threatLevel = 'safe';
+    riskScore = 8;
+    confidence = 97.0;
 
-      reasons.push(
-        'Sensitive-looking information was found in the QR text payload.'
-      );
-
-    } else {
-      threatLevel = 'safe';
-      riskScore = 8;
-      confidence = 97.0;
-
-      reasons.push(
-        'Static text payload detected without an identified URL.'
-      );
-    }
+    reasons.push(
+      'Static text payload detected without an identified URL or executable URI action.'
+    );
   }
 
   return {
-    payload,
+    payload: cleanPayload,
     threatLevel,
     confidence,
     riskScore,
     reasons,
 
     featuresExtracted: {
-      'Decoded Data Type':
-        isUrl
-          ? 'Hyperlink (URL)'
-          : isCustomUri
-            ? 'Non-web URI'
-            : 'Plain Text',
+      'QR Content Type': contentType,
 
-      'Payload Length': `${payload.length} bytes`,
+      'Decoded Data Type':
+        isUrl ? 'Hyperlink (URL)' :
+        isCustomUri ? 'Non-web URI' :
+        isWifi ? 'Wi-Fi Configuration' :
+        isVCard ? 'Contact Card (vCard)' :
+        'Plain Text',
+
+      'Payload Length': `${cleanPayload.length} characters`,
 
       'Quishing Exploit Vector':
-        isCustomUri
-          ? 'Non-web URI'
-          : isUrl
-            ? 'URL Redirection'
-            : 'None'
+        isUrl ? 'Web URL - Destination Review Required' :
+        isCustomUri ? 'Non-web URI Action' :
+        'None Identified'
     }
   };
 }
 
+
 // Screenshot Scanner Logic
-// This function uses OCR text heuristics, not full visual analysis.
+// OCR text-based heuristic analysis, not full visual or ML analysis.
 export function analyzeScreenshot(
   filename: string,
   extractedOcrText: string
 ) {
-  const lower = extractedOcrText.toLowerCase();
+  const lower = extractedOcrText
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
 
-  const hasLoginForm =
-    lower.includes('login') ||
-    lower.includes('sign in') ||
-    lower.includes('password') ||
-    lower.includes('enter code');
+  // Credential-related indicators
+  const hasLoginForm = [
+    'login',
+    'log in',
+    'sign in',
+    'password',
+    'enter code',
+    'email address',
+    'username',
+    'verify your identity'
+  ].some(term => lower.includes(term));
 
-  const hasUrgency =
-    lower.includes('suspended') ||
-    lower.includes('urgent') ||
-    lower.includes('action required') ||
-    lower.includes('expire');
+  // Urgency indicators
+  const hasUrgency = [
+    'urgent',
+    'action required',
+    'immediately',
+    'right away',
+    'before your account',
+    'account termination',
+    'verify immediately'
+  ].some(term => lower.includes(term));
 
+  // Account restriction or unusual activity
+  const hasAccountThreat = [
+    'account suspended',
+    'account restricted',
+    'temporarily restricted',
+    'unusual account activity',
+    'suspicious activity',
+    'account locked',
+    'access has been restricted',
+    'account disabled'
+  ].some(term => lower.includes(term));
+
+  // Verification-related indicators
+  const hasVerification = [
+    'account verification',
+    'verify your account',
+    'verification required',
+    'verify account',
+    'confirm your identity',
+    'review your account',
+    'needs verification',
+    'verification notice'
+  ].some(term => lower.includes(term));
+
+  // Known brand detection
   const hasBrand = TARGETED_BRANDS.find(
-    b => lower.includes(b)
+    b => lower.includes(b.toLowerCase())
   );
 
-  let riskScore = 15;
+  // Browser security warning
+  const hasSecurityWarning = [
+    'ssl',
+    'certificate error',
+    'not secure',
+    'connection is not private'
+  ].some(term => lower.includes(term));
 
+  let riskScore = 0;
   const reasons: string[] = [];
 
-  if (hasLoginForm && hasBrand) {
-    riskScore += 50;
-
+  // Credential-related text alone is a weak indicator.
+  if (hasLoginForm) {
+    riskScore += 20;
     reasons.push(
-      `OCR text contains a login-related phrase and a known brand name: "${hasBrand.toUpperCase()}".`
+      'OCR text contains credential-related fields or login instructions.'
     );
   }
 
   if (hasUrgency) {
-    riskScore += 30;
-
+    riskScore += 20;
     reasons.push(
       'OCR text contains urgency-related language.'
     );
   }
 
-  if (
-    lower.includes('ssl') ||
-    lower.includes('certificate error') ||
-    lower.includes('not secure')
-  ) {
-    riskScore += 25;
+  if (hasAccountThreat) {
+    riskScore += 20;
+    reasons.push(
+      'OCR text contains account restriction or unusual activity warnings.'
+    );
+  }
 
+  if (hasVerification) {
+    riskScore += 15;
+    reasons.push(
+      'OCR text contains account verification or identity confirmation requests.'
+    );
+  }
+
+  // A known brand combined with credential collection is more concerning.
+  if (hasLoginForm && hasBrand) {
+    riskScore += 25;
+    reasons.push(
+      `OCR text contains credential-related content and a known brand name: "${hasBrand.toUpperCase()}".`
+    );
+  }
+
+  if (hasSecurityWarning) {
+    riskScore += 20;
     reasons.push(
       'OCR text contains a browser security warning phrase.'
     );
   }
 
+  riskScore = Math.min(99, riskScore);
+
   let threatLevel: ThreatLevel = 'safe';
+  let confidence = 95.5;
 
-  let confidence = 94.6;
-
-  if (riskScore >= 60) {
+  if (riskScore >= 65) {
     threatLevel = 'phishing';
-    confidence = 96.9;
-
+    confidence = 92.0;
   } else if (riskScore >= 35) {
     threatLevel = 'suspicious';
-    confidence = 81.3;
-
+    confidence = 82.0;
   } else {
     threatLevel = 'safe';
     confidence = 95.5;
 
     reasons.push(
-      'No matching brand-login or urgency indicators were found in the supplied OCR text.'
+      'No combination of strong phishing indicators was detected in the supplied OCR text.'
     );
   }
 
   return {
     threatLevel,
     confidence,
-    riskScore: Math.min(99, riskScore),
+    riskScore,
     reasons,
 
     featuresExtracted: {
-      'Detected Visual Elements':
-        hasLoginForm ? 'Credential-related Text Found' : 'No Credential-related Text Found',
+      'Detected Visual Elements': hasLoginForm
+        ? 'Credential-related Text Found'
+        : 'No Credential-related Text Found',
 
-      'Targeted Brand Emblem':
-        hasBrand ? hasBrand.toUpperCase() : 'None',
+      'Targeted Brand Emblem': hasBrand
+        ? hasBrand.toUpperCase()
+        : 'None',
 
-      'Urgency Visual Banner':
-        hasUrgency ? 'Urgency Text Found' : 'Not Found',
+      'Urgency Visual Banner': hasUrgency
+        ? 'Urgency Text Found'
+        : 'Not Found',
+
+      'Account Threat Indicator': hasAccountThreat
+        ? 'Account Threat Language Found'
+        : 'Not Found',
+
+      'Verification Request': hasVerification
+        ? 'Verification Language Found'
+        : 'Not Found',
 
       'Image Frame Status': 'OCR Text Heuristic Analysis'
     }
   };
 }
+
 
 // AI Image Scanner
 // This is a basic filename/file-size heuristic, NOT a trained AI detector.
@@ -729,74 +879,87 @@ export function analyzeMessageNlp(text: string) {
   const lower = text.toLowerCase();
 
   const hasUrgent =
-    /urgent|alert|suspended|locked|action required|final notice|immediate/i.test(text);
+    /\b(urgent|alert|suspended|suspend|locked|action required|final notice|immediate|immediately|today|expires|permanent)\b/i.test(lower);
 
   const hasFinancial =
-    /bank|crypto|bitcoin|wire|balance|claim|reward|won|lottery|tax|refund|zelle|cashapp/i.test(text);
+    /\b(bank|bkash|nagad|rocket|crypto|bitcoin|wire|balance|claim|reward|won|lottery|tax|refund|zelle|cashapp|payment|account|wallet)\b/i.test(lower);
 
   const hasShortlink =
-    /bit\.ly|tinyurl|t\.co|goo\.gl|is\.gd|ow\.ly|cutt\.ly/i.test(text);
+    /\b(bit\.ly|tinyurl\.com|t\.co|goo\.gl|is\.gd|ow\.ly|cutt\.ly)\b/i.test(lower);
+
+  const hasUrl =
+    /https?:\/\/[^\s]+/i.test(lower);
 
   const hasPhoneCall =
-    /call (now|at|this number)|dial|toll[- ]free|\+1-\d{3}/i.test(text);
+    /\b(call (now|at|this number)|dial|toll[- ]free)\b|\+\d{1,3}[- ]\d{3}/i.test(lower);
 
+  const hasCredentialRequest =
+    /\b(verify|share|send|provide|confirm|enter)\s+(?:(?:your|my|the)\s+)?(pin|password|otp|passcode|verification code)\b/i.test(lower);
+    
   const hasZeroDayToken =
-    /v-e-r-i-f-y|acc0unt|sec-ure|p-a-y/i.test(text);
+    /v-e-r-i-f-y|acc0unt|sec-ure|p-a-y/i.test(lower);
 
-  let risk = 10;
+  let risk = 5;
 
   const reasons: string[] = [];
 
   if (hasShortlink) {
-    risk += 40;
-
+    risk += 35;
     reasons.push(
-      'Contains a URL shortener that can hide the final destination.'
+      'Contains a URL shortener that may hide the final destination.'
     );
   }
 
   if (hasUrgent && hasFinancial) {
-    risk += 45;
-
+    risk += 30;
     reasons.push(
       'Combines financial-related language with urgency-related language.'
     );
   }
 
-  if (hasPhoneCall) {
-    risk += 25;
+  if (hasCredentialRequest) {
+    risk += 35;
+    reasons.push(
+      'Requests sensitive credentials such as a PIN, password, or verification code.'
+    );
+  }
 
+  if (hasUrl && (hasUrgent || hasFinancial || hasCredentialRequest)) {
+    risk += 20;
+    reasons.push(
+      'Contains a URL combined with suspicious financial, urgency, or credential-related content.'
+    );
+  }
+
+  if (hasPhoneCall) {
+    risk += 20;
     reasons.push(
       'Contains a request to make a phone call or dial a number.'
     );
   }
 
   if (hasZeroDayToken) {
-    risk += 35;
-
+    risk += 25;
     reasons.push(
       'Contains obfuscated words or characters that may bypass simple keyword checks.'
     );
   }
 
   let threatLevel: ThreatLevel = 'safe';
-
   let confidence = 96.0;
 
   if (risk >= 50) {
     threatLevel = 'phishing';
     confidence = 97.2;
-
   } else if (risk >= 25) {
     threatLevel = 'suspicious';
     confidence = 82.0;
-
   } else {
     threatLevel = 'safe';
     confidence = 98.4;
 
     reasons.push(
-      'No major urgency, shortlink, or callback indicators were detected by the current checks.'
+      'No major phishing indicators were detected by the current checks.'
     );
   }
 
@@ -815,6 +978,12 @@ export function analyzeMessageNlp(text: string) {
 
       'Financial Scam Intent':
         hasFinancial ? 'Financial Keywords Found' : 'None',
+
+      'Suspicious URL':
+        hasUrl ? 'URL Detected' : 'None',
+
+      'Credential Theft Indicator':
+        hasCredentialRequest ? 'Sensitive Credential Request Detected' : 'None',
 
       'Vishing Callback Hook':
         hasPhoneCall ? 'Detected' : 'None',

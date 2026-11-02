@@ -1,16 +1,17 @@
+
 import React, { useState } from 'react';
 import { User, ScanResult } from '../../types';
 import { analyzeUrl } from '../../utils/mlEngine';
 import { Storage } from '../../utils/storage';
 import { downloadScanPdfReport } from '../../utils/pdfGenerator';
-import { 
-  Globe, 
-  ShieldAlert, 
-  ShieldCheck, 
-  AlertTriangle, 
-  Download, 
-  ExternalLink, 
-  CheckCircle, 
+import {
+  Globe,
+  ShieldAlert,
+  ShieldCheck,
+  AlertTriangle,
+  Download,
+  ExternalLink,
+  CheckCircle,
   RefreshCw,
   Search,
   Lock,
@@ -45,13 +46,16 @@ const SAMPLE_URLS = [
   }
 ];
 
-export const UrlScanner: React.FC<UrlScannerProps> = ({ currentUser, onScanComplete }) => {
-  const [urlInput, setUrlInput] = useState(SAMPLE_URLS[0].url);
-  const [isScanning, setIsScanning] = useState(false);
+export const UrlScanner: React.FC<UrlScannerProps> = ({
+  currentUser,
+  onScanComplete
+}) => {
+  const [urlInput, setUrlInput] = useState('');  const [isScanning, setIsScanning] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
 
   const handleScan = () => {
     if (!urlInput.trim()) return;
+
     setIsScanning(true);
 
     setTimeout(() => {
@@ -76,9 +80,18 @@ export const UrlScanner: React.FC<UrlScannerProps> = ({ currentUser, onScanCompl
       Storage.addScan(scanRecord);
       setResult(scanRecord);
       setIsScanning(false);
+
       if (onScanComplete) onScanComplete(scanRecord);
     }, 400);
   };
+
+  // Dynamic classification heading
+  const classificationHeading =
+    result?.threatLevel === 'phishing'
+      ? 'Fake / Phishing'
+      : result?.threatLevel === 'suspicious'
+        ? 'Suspicious'
+        : 'Real / Safe';
 
   return (
     <div className="space-y-6">
@@ -87,8 +100,10 @@ export const UrlScanner: React.FC<UrlScannerProps> = ({ currentUser, onScanCompl
           <Globe className="w-5 h-5 text-cyan-400" />
           <span>Real-Time URL Phishing Scanner</span>
         </h1>
+
         <p className="text-xs text-slate-400 mt-1">
-Detects suspicious URLs, fake domain names, misleading subdomains, and unsafe website extensions using an SVM model.        </p>
+          Detects suspicious URLs, fake domain names, misleading subdomains, and unsafe website extensions using an SVM model.
+        </p>
       </div>
 
       {/* Input Box */}
@@ -100,6 +115,7 @@ Detects suspicious URLs, fake domain names, misleading subdomains, and unsafe we
         <div className="flex flex-col sm:flex-row items-stretch gap-2">
           <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+
             <input
               type="text"
               value={urlInput}
@@ -128,22 +144,21 @@ Detects suspicious URLs, fake domain names, misleading subdomains, and unsafe we
             )}
           </button>
         </div>
-
-        {/* Presets */}
-        
       </div>
 
       {/* Result Display */}
       {result && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-5 space-y-4">
-            <div className={`p-5 rounded-xl border shadow-xl ${
-              result.threatLevel === 'phishing'
-                ? 'border-rose-800/80 bg-rose-950/30'
-                : result.threatLevel === 'suspicious'
-                ? 'border-amber-800/80 bg-amber-950/30'
-                : 'border-emerald-800/80 bg-emerald-950/30'
-            }`}>
+            <div
+              className={`p-5 rounded-xl border shadow-xl ${
+                result.threatLevel === 'phishing'
+                  ? 'border-rose-800/80 bg-rose-950/30'
+                  : result.threatLevel === 'suspicious'
+                    ? 'border-amber-800/80 bg-amber-950/30'
+                    : 'border-emerald-800/80 bg-emerald-950/30'
+              }`}
+            >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
                   {result.threatLevel === 'phishing' ? (
@@ -153,18 +168,35 @@ Detects suspicious URLs, fake domain names, misleading subdomains, and unsafe we
                   ) : (
                     <ShieldCheck className="w-6 h-6 text-emerald-400" />
                   )}
+
                   <div>
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Threat Verdict</span>
-                    <h3 className={`text-sm font-bold ${
-                      result.threatLevel === 'phishing' ? 'text-rose-300' : result.threatLevel === 'suspicious' ? 'text-amber-300' : 'text-emerald-300'
-                    }`}>
-                      {result.threatLevel === 'phishing' ? 'Malicious Phishing URL' : result.threatLevel === 'suspicious' ? 'Suspicious Domain' : 'Verified Safe Domain'}
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
+                      Threat Verdict
+                    </span>
+
+                    <h3
+                      className={`text-sm font-bold ${
+                        result.threatLevel === 'phishing'
+                          ? 'text-rose-300'
+                          : result.threatLevel === 'suspicious'
+                            ? 'text-amber-300'
+                            : 'text-emerald-300'
+                      }`}
+                    >
+                      {result.threatLevel === 'phishing'
+                        ? 'Malicious Phishing URL'
+                        : result.threatLevel === 'suspicious'
+                          ? 'Suspicious Domain'
+                          : 'Verified Safe Domain'}
                     </h3>
                   </div>
                 </div>
 
                 <div className="text-right">
-                  <span className="text-[10px] font-mono uppercase text-slate-400 block">Confidence</span>
+                  <span className="text-[10px] font-mono uppercase text-slate-400 block">
+                    Confidence
+                  </span>
+
                   <span className="text-sm font-bold font-mono text-white tabular-nums">
                     {result.confidence}%
                   </span>
@@ -174,12 +206,20 @@ Detects suspicious URLs, fake domain names, misleading subdomains, and unsafe we
               <div className="space-y-1 mb-4">
                 <div className="flex justify-between text-[11px] text-slate-400">
                   <span>Calculated Risk Probability:</span>
-                  <span className="font-mono font-bold text-slate-200">{result.riskScore} / 100</span>
+
+                  <span className="font-mono font-bold text-slate-200">
+                    {result.riskScore} / 100
+                  </span>
                 </div>
+
                 <div className="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${
-                      result.threatLevel === 'phishing' ? 'bg-rose-500' : result.threatLevel === 'suspicious' ? 'bg-amber-500' : 'bg-emerald-500'
+                      result.threatLevel === 'phishing'
+                        ? 'bg-rose-500'
+                        : result.threatLevel === 'suspicious'
+                          ? 'bg-amber-500'
+                          : 'bg-emerald-500'
                     }`}
                     style={{ width: `${result.riskScore}%` }}
                   />
@@ -200,6 +240,7 @@ Detects suspicious URLs, fake domain names, misleading subdomains, and unsafe we
             <div className="p-4 rounded-xl border border-slate-800 bg-[var(--theme-card)] shadow-lg">
               <div className="flex items-center gap-2 mb-3">
                 <Layers className="w-4 h-4 text-cyan-400" />
+
                 <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
                   Lexical Feature Breakdown
                 </h4>
@@ -207,9 +248,15 @@ Detects suspicious URLs, fake domain names, misleading subdomains, and unsafe we
 
               <div className="space-y-2 text-xs">
                 {Object.entries(result.featuresExtracted).map(([k, v]) => (
-                  <div key={k} className="flex justify-between items-center py-1.5 border-b border-slate-800/60 last:border-0">
+                  <div
+                    key={k}
+                    className="flex justify-between items-center py-1.5 border-b border-slate-800/60 last:border-0"
+                  >
                     <span className="text-slate-400">{k}:</span>
-                    <span className="font-mono text-slate-200 font-medium truncate max-w-[200px] text-right">{String(v)}</span>
+
+                    <span className="font-mono text-slate-200 font-medium truncate max-w-[200px] text-right">
+                      {String(v)}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -217,22 +264,29 @@ Detects suspicious URLs, fake domain names, misleading subdomains, and unsafe we
           </div>
 
           <div className="lg:col-span-7">
-            {/* Reasons why Fake or Real */}
+            {/* Classification Reasons */}
             <div className="p-5 rounded-xl border border-slate-800 bg-[var(--theme-card)] shadow-lg space-y-4">
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-cyan-400" />
+
                 <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-                  Why is this Classified as {result.threatLevel === 'phishing' ? 'Fake / Phishing' : 'Real / Safe'}? 
+                  Why is this Classified as {classificationHeading}?
                 </h4>
               </div>
 
               <ul className="space-y-2.5">
                 {result.reasons.map((reason, i) => (
-                  <li key={i} className="flex items-start gap-3 bg-slate-950/60 p-3 rounded-lg border border-slate-800">
+                  <li
+                    key={i}
+                    className="flex items-start gap-3 bg-slate-950/60 p-3 rounded-lg border border-slate-800"
+                  >
                     <span className="text-cyan-400 font-mono font-bold text-xs shrink-0 mt-0.5">
                       {i + 1}.
                     </span>
-                    <span className="text-xs text-slate-200 leading-relaxed">{reason}</span>
+
+                    <span className="text-xs text-slate-200 leading-relaxed">
+                      {reason}
+                    </span>
                   </li>
                 ))}
               </ul>

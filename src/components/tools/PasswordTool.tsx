@@ -19,8 +19,7 @@ export const PasswordTool: React.FC = () => {
   const [passLength, setPassLength] = useState(18);
   const [useSymbols, setUseSymbols] = useState(true);
   const [useNumbers, setUseNumbers] = useState(true);
-  const [generatedPassword, setGeneratedPassword] = useState(() => generateSafePassword(18, true, true));
-  const [copied, setCopied] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState('');  const [copied, setCopied] = useState(false);
 
   // Strength Analyzer State
   const [testPassword, setTestPassword] = useState('');

@@ -86,7 +86,7 @@ GitHub Inc., 88 Colin P Kelly Jr St, San Francisco, CA 94107`
 ];
 
 export const EmailScanner: React.FC<EmailScannerProps> = ({ currentUser, onScanComplete }) => {
-  const [emailText, setEmailText] = useState(SAMPLE_EMAILS[0].text);
+  const [emailText, setEmailText] = useState('');
   const [selectedModel, setSelectedModel] = useState<'SVM' | 'Logistic Regression' | 'Random Forest'>('SVM');
   const [isScanning, setIsScanning] = useState(false);
   const [currentResult, setCurrentResult] = useState<ScanResult | null>(null);

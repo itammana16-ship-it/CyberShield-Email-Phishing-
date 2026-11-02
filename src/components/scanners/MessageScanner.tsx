@@ -37,8 +37,7 @@ const SAMPLE_MESSAGES = [
 ];
 
 export const MessageScanner: React.FC<MessageScannerProps> = ({ currentUser, onScanComplete }) => {
-  const [msgText, setMsgText] = useState(SAMPLE_MESSAGES[0].text);
-  const [isScanning, setIsScanning] = useState(false);
+  const [msgText, setMsgText] = useState('');  const [isScanning, setIsScanning] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
 
   const handleScan = () => {

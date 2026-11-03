@@ -1,21 +1,21 @@
+
 import React, { useState } from 'react';
 import { User, ScanResult } from '../../types';
 import { extractEmailFeatures, runSvmEmailClassifier } from '../../utils/mlEngine';
 import { Storage } from '../../utils/storage';
 import { downloadScanPdfReport } from '../../utils/pdfGenerator';
-import { 
-  Mail, 
-  ShieldAlert, 
-  ShieldCheck, 
-  AlertTriangle, 
-  Download, 
-  FileText, 
-  CheckCircle, 
-  Upload, 
+import {
+  Mail,
+  ShieldAlert,
+  ShieldCheck,
+  AlertTriangle,
+  Download,
+  CheckCircle,
+  Upload,
   RefreshCw,
   Cpu,
   Layers,
-  Sparkles
+  Brain
 } from 'lucide-react';
 
 interface EmailScannerProps {
@@ -53,7 +53,7 @@ DKIM: fail
 
 Hello Sarah,
 
-I am currently in an urgent board meeting and cannot take phone calls. We have reached an agreement on the project acquisition. 
+I am currently in an urgent board meeting and cannot take phone calls. We have reached an agreement on the project acquisition.
 
 Please execute an immediate wire transfer of $85,400 to the attached invoice vendor account today before 4:00 PM EST. The transaction details are in the attached file wire_instructions.scr.
 
@@ -85,22 +85,55 @@ GitHub Inc., 88 Colin P Kelly Jr St, San Francisco, CA 94107`
   }
 ];
 
-export const EmailScanner: React.FC<EmailScannerProps> = ({ currentUser, onScanComplete }) => {
+export const EmailScanner: React.FC<EmailScannerProps> = ({
+  currentUser,
+  onScanComplete
+}) => {
   const [emailText, setEmailText] = useState('');
-  const [selectedModel, setSelectedModel] = useState<'SVM' | 'Logistic Regression' | 'Random Forest'>('SVM');
+  const [selectedModel, setSelectedModel] = useState<
+    'SVM' | 'Logistic Regression' | 'Random Forest'
+  >('SVM');
   const [isScanning, setIsScanning] = useState(false);
   const [currentResult, setCurrentResult] = useState<ScanResult | null>(null);
 
-  const handleScan = () => {
+  // Actual trained Python SVM API integration
+  const handleScan = async () => {
     if (!emailText.trim()) return;
+
     setIsScanning(true);
 
-    setTimeout(() => {
+    try {
+       const response = await fetch('https://phishguard-ml-api-t91b.onrender.com/predict', {       
+         method: 'POST',
+         headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: emailText
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('SVM API request failed');
+      }
+
+      const spamOutput: {
+        prediction: 'Spam' | 'Legitimate';
+        model: string;
+      } = await response.json();
+
+      // Keep the existing phishing detection logic unchanged
       const features = extractEmailFeatures(emailText);
       const mlOutput = runSvmEmailClassifier(features);
 
-      const firstLine = emailText.split('\n').find(l => l.toLowerCase().startsWith('subject:')) || 'Email Content Inspection';
-      const cleanTitle = firstLine.replace(/^subject:\s*/i, '').trim() || 'Email Security Analysis';
+      const firstLine =
+        emailText.split('\n').find(l =>
+          l.toLowerCase().startsWith('subject:')
+        ) || 'Email Content Inspection';
+
+      const cleanTitle =
+        firstLine.replace(/^subject:\s*/i, '').trim() ||
+        'Email Security Analysis';
 
       const scanRecord: ScanResult = {
         id: `scn_eml_${Date.now()}`,
@@ -116,26 +149,44 @@ export const EmailScanner: React.FC<EmailScannerProps> = ({ currentUser, onScanC
         timestamp: new Date().toISOString(),
         reasons: mlOutput.reasons,
         featuresExtracted: mlOutput.featuresExtracted,
-        modelComparison: mlOutput.modelComparison
+        modelComparison: mlOutput.modelComparison,
+
+        // Separate trained SVM spam classification
+        spamClassification: spamOutput.prediction,
+        spamModel: 'Trained SVM'
       };
 
       Storage.addScan(scanRecord);
       setCurrentResult(scanRecord);
+
+      if (onScanComplete) {
+        onScanComplete(scanRecord);
+      }
+
+    } catch (error) {
+      console.error('Trained SVM API Error:', error);
+      alert(
+        'Trained SVM API connect hocche na. Python API server check koro.'
+      );
+    } finally {
       setIsScanning(false);
-      if (onScanComplete) onScanComplete(scanRecord);
-    }, 450);
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (file) {
       const reader = new FileReader();
+
       reader.onload = (event) => {
         const text = event.target?.result as string;
+
         if (text) {
           setEmailText(text);
         }
       };
+
       reader.readAsText(file);
     }
   };
@@ -149,27 +200,29 @@ export const EmailScanner: React.FC<EmailScannerProps> = ({ currentUser, onScanC
             <Mail className="w-5 h-5 text-cyan-400" />
             <span>Phishing Email Scanner</span>
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
-PhishGuard checks email security details, suspicious URLs, and urgent or misleading messages in real time to detect phishing attacks.          </p>
-        </div>
 
-       
+          <p className="text-xs text-slate-400 mt-1">
+            PhishGuard checks email security details, suspicious URLs, and urgent or misleading messages in real time to detect phishing attacks.
+          </p>
+        </div>
       </div>
 
-      {/* Main Grid: Input & Presets */}
+      {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Email Input Form */}
+
+        {/* Left Column: Email Input */}
         <div className="lg:col-span-7 space-y-4">
           <div className="p-4 rounded-xl border border-slate-800 bg-[var(--theme-card)] shadow-lg space-y-3">
+
             <div className="flex items-center justify-between">
               <label className="text-xs font-semibold text-slate-200 uppercase tracking-wider">
                 Raw Email Headers & Body Payload
               </label>
-              
-              {/* File upload trigger */}
+
               <label className="cursor-pointer text-xs flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 transition-colors">
                 <Upload className="w-3.5 h-3.5" />
                 <span>Upload .eml / .txt</span>
+
                 <input
                   type="file"
                   accept=".eml,.txt,.msg"
@@ -201,6 +254,7 @@ PhishGuard checks email security details, suspicious URLs, and urgent or mislead
                 >
                   Clear
                 </button>
+
                 <button
                   type="button"
                   onClick={handleScan}
@@ -210,7 +264,7 @@ PhishGuard checks email security details, suspicious URLs, and urgent or mislead
                   {isScanning ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin text-white" />
-                      <span>Classifying with SVM...</span>
+                      <span>Analyzing Email...</span>
                     </>
                   ) : (
                     <>
@@ -222,22 +276,23 @@ PhishGuard checks email security details, suspicious URLs, and urgent or mislead
               </div>
             </div>
           </div>
-
-          
         </div>
 
-        {/* Right Column: Scan Verdict & Feature Vector Output */}
+        {/* Right Column: Results */}
         <div className="lg:col-span-5">
           {currentResult ? (
             <div className="space-y-4">
-              {/* Verdict Card */}
-              <div className={`p-5 rounded-xl border shadow-xl ${
-                currentResult.threatLevel === 'phishing'
-                  ? 'border-rose-800/80 bg-rose-950/30'
-                  : currentResult.threatLevel === 'suspicious'
-                  ? 'border-amber-800/80 bg-amber-950/30'
-                  : 'border-emerald-800/80 bg-emerald-950/30'
-              }`}>
+
+              {/* Existing Phishing Detection Result */}
+              <div
+                className={`p-5 rounded-xl border shadow-xl ${
+                  currentResult.threatLevel === 'phishing'
+                    ? 'border-rose-800/80 bg-rose-950/30'
+                    : currentResult.threatLevel === 'suspicious'
+                    ? 'border-amber-800/80 bg-amber-950/30'
+                    : 'border-emerald-800/80 bg-emerald-950/30'
+                }`}
+              >
                 <div className="flex items-center justify-between gap-3 mb-3">
                   <div className="flex items-center gap-2">
                     {currentResult.threatLevel === 'phishing' ? (
@@ -247,15 +302,21 @@ PhishGuard checks email security details, suspicious URLs, and urgent or mislead
                     ) : (
                       <ShieldCheck className="w-6 h-6 text-emerald-400" />
                     )}
+
                     <div>
-                      <span className="text-[10px] uppercase font-mono tracking-wider text-slate-400">Classification</span>
-                      <h3 className={`text-base font-bold ${
-                        currentResult.threatLevel === 'phishing'
-                          ? 'text-rose-300'
-                          : currentResult.threatLevel === 'suspicious'
-                          ? 'text-amber-300'
-                          : 'text-emerald-300'
-                      }`}>
+                      <span className="text-[10px] uppercase font-mono tracking-wider text-slate-400">
+                        Phishing Classification
+                      </span>
+
+                      <h3
+                        className={`text-base font-bold ${
+                          currentResult.threatLevel === 'phishing'
+                            ? 'text-rose-300'
+                            : currentResult.threatLevel === 'suspicious'
+                            ? 'text-amber-300'
+                            : 'text-emerald-300'
+                        }`}
+                      >
                         {currentResult.threatLevel === 'phishing'
                           ? 'High-Risk Phishing Email'
                           : currentResult.threatLevel === 'suspicious'
@@ -265,21 +326,26 @@ PhishGuard checks email security details, suspicious URLs, and urgent or mislead
                     </div>
                   </div>
 
-                  {/* Confidence Badge */}
                   <div className="text-right">
-                    <span className="text-[10px] uppercase font-mono text-slate-400 block">Confidence</span>
+                    <span className="text-[10px] uppercase font-mono text-slate-400 block">
+                      Confidence
+                    </span>
+
                     <span className="text-sm font-bold font-mono text-white tabular-nums">
                       {currentResult.confidence}%
                     </span>
                   </div>
                 </div>
 
-                {/* Risk score gauge bar */}
+                {/* Risk Score */}
                 <div className="space-y-1 mb-4">
                   <div className="flex justify-between text-[11px] text-slate-400">
                     <span>Phishing Risk Index:</span>
-                    <span className="font-mono font-bold text-slate-200">{currentResult.riskScore} / 100</span>
+                    <span className="font-mono font-bold text-slate-200">
+                      {currentResult.riskScore} / 100
+                    </span>
                   </div>
+
                   <div className="w-full h-2 rounded-full bg-slate-900 overflow-hidden">
                     <div
                       className={`h-full transition-all duration-500 rounded-full ${
@@ -294,7 +360,7 @@ PhishGuard checks email security details, suspicious URLs, and urgent or mislead
                   </div>
                 </div>
 
-                {/* PDF Report Download Button */}
+                {/* PDF Report */}
                 <button
                   type="button"
                   onClick={() => downloadScanPdfReport(currentResult)}
@@ -305,31 +371,78 @@ PhishGuard checks email security details, suspicious URLs, and urgent or mislead
                 </button>
               </div>
 
-              {/* Reasons why Fake or Real */}
+              {/* New: Actual Trained SVM Spam/Ham Result */}
+              <div className="p-5 rounded-xl border border-cyan-800/60 bg-cyan-950/20 shadow-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <Brain className="w-5 h-5 text-cyan-400" />
+                  <h3 className="text-sm font-bold text-cyan-300">
+                    Trained SVM Classification
+                  </h3>
+                </div>
+
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-slate-400">
+                      Spam / Ham Prediction
+                    </p>
+
+                    <p
+                      className={`text-xl font-bold mt-1 ${
+                        currentResult.spamClassification === 'Spam'
+                          ? 'text-rose-400'
+                          : 'text-emerald-400'
+                      }`}
+                    >
+                      {currentResult.spamClassification ?? 'Not Available'}
+                    </p>
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-[10px] uppercase text-slate-400">
+                      Model
+                    </p>
+                    <p className="text-sm font-semibold text-white mt-1">
+                      {currentResult.spamModel ?? 'Trained SVM'}
+                    </p>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-slate-400 mt-3 border-t border-cyan-900/50 pt-3">
+                  This result is generated by the separately trained Python SVM spam classification model.
+                </p>
+              </div>
+
+              {/* Detection Rationale */}
               <div className="p-4 rounded-xl border border-slate-800 bg-[var(--theme-card)] shadow-lg space-y-3">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-cyan-400" />
+
                   <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-                    Detection Rationale & Forensic Indicators 
+                    Detection Rationale & Forensic Indicators
                   </h4>
                 </div>
 
                 <ul className="space-y-2 text-xs text-slate-300">
                   {currentResult.reasons.map((reason, i) => (
-                    <li key={i} className="flex items-start gap-2 bg-slate-950/50 p-2.5 rounded-lg border border-slate-800/60">
+                    <li
+                      key={i}
+                      className="flex items-start gap-2 bg-slate-950/50 p-2.5 rounded-lg border border-slate-800/60"
+                    >
                       <span className="text-cyan-400 font-mono font-bold text-[11px] shrink-0 mt-0.5">
                         {i + 1}.
                       </span>
+
                       <span className="leading-relaxed">{reason}</span>
                     </li>
                   ))}
                 </ul>
               </div>
-              
+
               {/* Lexical Feature Breakdown */}
               <div className="p-4 rounded-xl border border-slate-800 bg-[var(--theme-card)] shadow-lg space-y-3">
                 <div className="flex items-center gap-2">
                   <Layers className="w-4 h-4 text-cyan-400" />
+
                   <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
                     Lexical Feature Breakdown
                   </h4>
@@ -350,7 +463,15 @@ PhishGuard checks email security details, suspicious URLs, and urgent or mislead
                     {
                       label: 'Urgency Keywords',
                       value:
-                        ['urgent', 'immediately', 'suspended', 'verify', 'password', 'limited', 'action required']
+                        [
+                          'urgent',
+                          'immediately',
+                          'suspended',
+                          'verify',
+                          'password',
+                          'limited',
+                          'action required'
+                        ]
                           .filter(word =>
                             currentResult.targetContent.toLowerCase().includes(word)
                           )
@@ -382,6 +503,7 @@ PhishGuard checks email security details, suspicious URLs, and urgent or mislead
                       <p className="text-[10px] text-slate-500 font-medium">
                         {feature.label}
                       </p>
+
                       <p className="font-mono text-slate-200 font-medium mt-1 break-words">
                         {feature.value}
                       </p>
@@ -404,6 +526,7 @@ PhishGuard checks email security details, suspicious URLs, and urgent or mislead
                           <p className="text-[10px] text-slate-500 break-words">
                             {key}
                           </p>
+
                           <p className="font-mono text-slate-200 mt-1 break-words">
                             {String(value)}
                           </p>
@@ -413,17 +536,17 @@ PhishGuard checks email security details, suspicious URLs, and urgent or mislead
                   </div>
                 )}
               </div>
-
-
-              
             </div>
           ) : (
-            
             <div className="h-full min-h-[380px] rounded-xl border border-dashed border-slate-800 p-8 flex flex-col items-center justify-center text-center text-slate-500 bg-slate-900/20">
               <Mail className="w-12 h-12 text-slate-700 mb-3" />
-              <h3 className="text-sm font-semibold text-slate-400">No Email Scanned Yet</h3>
+
+              <h3 className="text-sm font-semibold text-slate-400">
+                No Email Scanned Yet
+              </h3>
+
               <p className="text-xs text-slate-500 max-w-xs mt-1">
-                Enter email text or choose one of the pre-loaded scenarios, then click "Execute SVM Detection" to view risk score, confidence %, and detailed reasons.
+                Enter email text and click Execute Detection to view the phishing analysis and trained SVM spam classification.
               </p>
             </div>
           )}

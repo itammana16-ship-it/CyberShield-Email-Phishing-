@@ -49,12 +49,18 @@ export interface ScanResult {
     xgboostAccuracy: number;
   };
 
+  
   additionalMetadata?: {
     imageSrc?: string;
     decodedQr?: string;
     senderAddress?: string;
     spfDkimStatus?: string;
+    spamClassification?: 'Spam' | 'Legitimate';
+    spamModel?: 'Trained SVM';
   };
+  
+  spamClassification?: 'Spam' | 'Legitimate';
+  spamModel?: 'Trained SVM';
 }
 
 export type ThemePreset =

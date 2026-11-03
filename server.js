@@ -11,6 +11,7 @@ const PORT = process.env.PORT || 3003;
 const HOST = '0.0.0.0';
 const DB_NAME = 'phishguard';
 const USERS_COLLECTION = 'users';
+
 const uri = process.env.MONGODB_URI;
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -82,7 +83,6 @@ function authenticateToken(req, res, next) {
 
   try {
     req.authUser = jwt.verify(token, JWT_SECRET);
-
     next();
   } catch {
     return res.status(401).json({
@@ -135,6 +135,44 @@ async function startServer() {
     await db.command({ ping: 1 });
 
     console.log('MongoDB connected successfully!');
+
+    // Update existing Admin email in MongoDB
+    const adminUser = await usersCollection.findOne({
+      username: {
+        $regex: '^admin$',
+        $options: 'i'
+      },
+      role: 'admin'
+    });
+
+    if (adminUser) {
+      const existingEmail = await usersCollection.findOne({
+        email: 'admin@phishguard.com',
+        id: { $ne: adminUser.id }
+      });
+
+      if (existingEmail) {
+        console.error(
+          'Admin email update skipped: email is already in use.'
+        );
+      } else {
+        await usersCollection.updateOne(
+          {
+            id: adminUser.id,
+            role: 'admin'
+          },
+          {
+            $set: {
+              email: 'admin@phishguard.com'
+            }
+          }
+        );
+
+        console.log('Admin email updated successfully!');
+      }
+    } else {
+      console.log('Existing Admin account was not found.');
+    }
 
     // Register
     app.post('/api/auth/register', async (req, res) => {
@@ -498,6 +536,7 @@ async function startServer() {
     app.listen(PORT, HOST, () => {
       console.log(`Backend listening on ${HOST}:${PORT}`);
     });
+
   } catch (error) {
     console.error('Backend startup failed:', error.message);
 

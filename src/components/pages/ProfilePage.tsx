@@ -44,6 +44,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 
   const inputClass =
     'w-full py-2.5 px-3 bg-[var(--theme-bg)] border border-slate-700 rounded-lg text-[var(--theme-text)] focus:outline-none focus:border-cyan-500';
+
   const labelClass =
     'block text-sm text-slate-400 font-medium mb-1.5';
 
@@ -198,6 +199,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                   className="hidden"
                 />
               </label>
+
               <p className="text-xs text-slate-500">
                 Optional · Image must be smaller than 1 MB
               </p>
@@ -288,75 +290,77 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           </form>
         </section>
 
-        <section className="lg:col-span-5 p-5 rounded-xl border border-slate-700 bg-[var(--theme-card)] shadow-lg space-y-4">
-          <h2 className="text-base font-semibold text-[var(--theme-text)] flex items-center gap-2">
-            <KeyRound className="w-5 h-5 text-cyan-400" />
-            Change Password
-          </h2>
+        {currentUser.role !== 'admin' && (
+          <section className="lg:col-span-5 p-5 rounded-xl border border-slate-700 bg-[var(--theme-card)] shadow-lg space-y-4">
+            <h2 className="text-base font-semibold text-[var(--theme-text)] flex items-center gap-2">
+              <KeyRound className="w-5 h-5 text-cyan-400" />
+              Change Password
+            </h2>
 
-          {passError && (
-            <div className="p-3 rounded-lg bg-rose-950/60 border border-rose-800 text-rose-300 text-sm flex gap-2">
-              <AlertCircle className="w-5 h-5 shrink-0" />
-              <span>{passError}</span>
-            </div>
-          )}
+            {passError && (
+              <div className="p-3 rounded-lg bg-rose-950/60 border border-rose-800 text-rose-300 text-sm flex gap-2">
+                <AlertCircle className="w-5 h-5 shrink-0" />
+                <span>{passError}</span>
+              </div>
+            )}
 
-          {passSuccess && (
-            <div className="p-3 rounded-lg bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-sm flex gap-2">
-              <CheckCircle2 className="w-5 h-5 shrink-0" />
-              <span>{passSuccess}</span>
-            </div>
-          )}
+            {passSuccess && (
+              <div className="p-3 rounded-lg bg-emerald-950/60 border border-emerald-800 text-emerald-300 text-sm flex gap-2">
+                <CheckCircle2 className="w-5 h-5 shrink-0" />
+                <span>{passSuccess}</span>
+              </div>
+            )}
 
-          <form onSubmit={handleChangePassword} className="space-y-4">
-            <div>
-              <label className={labelClass}>Current Password</label>
-              <input
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                className={inputClass}
-                autoComplete="current-password"
-                required
-              />
-            </div>
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div>
+                <label className={labelClass}>Current Password</label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className={inputClass}
+                  autoComplete="current-password"
+                  required
+                />
+              </div>
 
-            <div>
-              <label className={labelClass}>New Password</label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className={inputClass}
-                placeholder="At least 8 characters"
-                autoComplete="new-password"
-                minLength={8}
-                required
-              />
-            </div>
+              <div>
+                <label className={labelClass}>New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className={inputClass}
+                  placeholder="At least 8 characters"
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                />
+              </div>
 
-            <div>
-              <label className={labelClass}>Confirm New Password</label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className={inputClass}
-                autoComplete="new-password"
-                minLength={8}
-                required
-              />
-            </div>
+              <div>
+                <label className={labelClass}>Confirm New Password</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className={inputClass}
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                />
+              </div>
 
-            <button
-              type="submit"
-              className="w-full py-2.5 px-4 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 hover:text-white border border-slate-700 font-semibold flex items-center justify-center gap-2 transition-colors"
-            >
-              <Lock className="w-4 h-4" />
-              Update Password
-            </button>
-          </form>
-        </section>
+              <button
+                type="submit"
+                className="w-full py-2.5 px-4 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 hover:text-white border border-slate-700 font-semibold flex items-center justify-center gap-2 transition-colors"
+              >
+                <Lock className="w-4 h-4" />
+                Update Password
+              </button>
+            </form>
+          </section>
+        )}
       </div>
     </div>
   );

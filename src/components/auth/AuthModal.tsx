@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { User } from '../../types';
 import { Storage } from '../../utils/storage';
@@ -49,7 +50,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const handleQuickFillAdmin = () => {
     setMode('login');
     setUsername('admin');
-    setEmail('admin@phishguard.ai');
+    setEmail('admin@phishguard.com');
     setPassword('Admin@2026');
     setError(null);
     setSuccessMsg(null);
@@ -118,14 +119,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
 
       const authenticatedUser = data.user as User;
-      if (mode === 'login') {
-  if (!data.accessToken) {
-    throw new Error('Access token was not returned by the server.');
-   }
-
-   sessionStorage.setItem('phishguard_access_token', data.accessToken);
-  }
-
       // Admin Login must accept only an account with admin role.
       if (adminOnly && authenticatedUser.role !== 'admin') {
         throw new Error(
@@ -160,6 +153,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 shadow-2xl p-6 sm:p-8 relative">
+
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/25">
@@ -172,7 +166,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </h2>
 
             <p className="text-xs text-slate-400 mt-1">
-              {adminOnly ? 'Administrator Login' : 'User Authentication'}
+              {adminOnly
+                ? 'Administrator Login'
+                : 'User Authentication'}
             </p>
           </div>
         </div>
@@ -232,6 +228,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Authentication form */}
         <form onSubmit={handleSubmit} className="space-y-4">
+
           <div>
             <label className="block text-xs font-medium text-slate-300 mb-1.5">
               Name
@@ -313,8 +310,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </button>
         </form>
 
-        
-
         {/* Back button */}
         <button
           type="button"
@@ -327,4 +322,3 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     </div>
   );
 };
-

@@ -11,7 +11,7 @@ const INITIAL_USERS: User[] = [
   {
     id: 'usr_admin_001',
     username: 'admin',
-    email: 'admin@phishguard.ai',
+    email: 'admin@phishguard.com',
     role: 'admin',
     createdAt: '2026-01-10T08:30:00Z',
     organization: 'PhishGuard Defense Security SOC',
@@ -156,7 +156,6 @@ const INITIAL_SCANS: ScanResult[] = [
       'Quishing Exploit Vector': 'High (Handler Injection)'
     }
   },
-  
 ];
 
 export const DEFAULT_THEME: ThemeSettings = {
@@ -176,12 +175,29 @@ export const Storage = {
     const raw = localStorage.getItem(USERS_STORAGE_KEY);
 
     if (!raw) {
-      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(INITIAL_USERS));
+      localStorage.setItem(
+        USERS_STORAGE_KEY,
+        JSON.stringify(INITIAL_USERS)
+      );
       return INITIAL_USERS;
     }
 
     try {
-      return JSON.parse(raw);
+      const users: User[] = JSON.parse(raw);
+
+      // Update existing Admin email without creating a new account.
+      const updatedUsers = users.map(user =>
+        user.id === 'usr_admin_001'
+          ? { ...user, email: 'admin@phishguard.com' }
+          : user
+      );
+
+      localStorage.setItem(
+        USERS_STORAGE_KEY,
+        JSON.stringify(updatedUsers)
+      );
+
+      return updatedUsers;
     } catch {
       return INITIAL_USERS;
     }
@@ -191,7 +207,7 @@ export const Storage = {
     const users = this.getUsers();
 
     const existingIndex = users.findIndex(
-      u => u.email.toLowerCase() === newUser.email.toLowerCase()
+     u => u.email.toLowerCase() === newUser.email.toLowerCase()
     );
 
     if (existingIndex >= 0) {
@@ -200,7 +216,10 @@ export const Storage = {
       users.push(newUser);
     }
 
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+    localStorage.setItem(
+      USERS_STORAGE_KEY,
+      JSON.stringify(users)
+    );
   },
 
   removeUser(userId: string): boolean {
@@ -213,7 +232,11 @@ export const Storage = {
     }
 
     const filtered = users.filter(u => u.id !== userId);
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(filtered));
+
+    localStorage.setItem(
+      USERS_STORAGE_KEY,
+      JSON.stringify(filtered)
+    );
 
     return true;
   },
@@ -222,7 +245,10 @@ export const Storage = {
     const raw = localStorage.getItem(SCANS_STORAGE_KEY);
 
     if (!raw) {
-      localStorage.setItem(SCANS_STORAGE_KEY, JSON.stringify(INITIAL_SCANS));
+      localStorage.setItem(
+        SCANS_STORAGE_KEY,
+        JSON.stringify(INITIAL_SCANS)
+      );
       return INITIAL_SCANS;
     }
 
@@ -236,7 +262,11 @@ export const Storage = {
   addScan(scan: ScanResult): void {
     const scans = this.getScans();
     scans.unshift(scan);
-    localStorage.setItem(SCANS_STORAGE_KEY, JSON.stringify(scans));
+
+    localStorage.setItem(
+      SCANS_STORAGE_KEY,
+      JSON.stringify(scans)
+    );
   },
 
   getUserScans(userId: string): ScanResult[] {
@@ -253,7 +283,18 @@ export const Storage = {
     }
 
     try {
-      return JSON.parse(raw);
+      const user: User = JSON.parse(raw);
+
+      if (user.id === 'usr_admin_001') {
+        user.email = 'admin@phishguard.com';
+
+        sessionStorage.setItem(
+          SESSION_KEY,
+          JSON.stringify(user)
+        );
+      }
+
+      return user;
     } catch {
       return null;
     }
@@ -261,7 +302,10 @@ export const Storage = {
 
   setActiveSession(user: User | null): void {
     if (user) {
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(user));
+      sessionStorage.setItem(
+        SESSION_KEY,
+        JSON.stringify(user)
+      );
     } else {
       sessionStorage.removeItem(SESSION_KEY);
     }
@@ -280,7 +324,11 @@ export const Storage = {
   },
 
   saveThemeSettings(settings: ThemeSettings): void {
-    localStorage.setItem(THEME_KEY, JSON.stringify(settings));
+    localStorage.setItem(
+      THEME_KEY,
+      JSON.stringify(settings)
+    );
+
     this.applyThemeToDOM(settings);
   },
 

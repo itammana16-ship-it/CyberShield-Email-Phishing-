@@ -13,7 +13,6 @@ import {
   Globe, 
   QrCode, 
   Camera, 
-  Image as ImageIcon, 
   MessageSquare,
   Eye,
   X,
@@ -50,7 +49,6 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({ currentUser, scans }) 
       case 'url': return <Globe className="w-4 h-4 text-blue-400" />;
       case 'qr': return <QrCode className="w-4 h-4 text-indigo-400" />;
       case 'screenshot': return <Camera className="w-4 h-4 text-purple-400" />;
-      case 'ai_image': return <ImageIcon className="w-4 h-4 text-rose-400" />;
       case 'message': return <MessageSquare className="w-4 h-4 text-amber-400" />;
       default: return <HistoryIcon className="w-4 h-4 text-slate-400" />;
     }
@@ -65,9 +63,10 @@ export const HistoryPage: React.FC<HistoryPageProps> = ({ currentUser, scans }) 
             <span>Threat Scan History & PDF Archive</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-Keeps a secure record of all tested emails, URLs, QR codes, screenshots, and AI-generated images.          </p>
+            Keeps a secure record of all tested emails, URLs, QR codes, screenshots, and messages.       
+          </p>
         </div>
-
+        
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-400 font-mono">
             Total Records: <strong className="text-white">{filteredScans.length}</strong>
@@ -102,7 +101,6 @@ Keeps a secure record of all tested emails, URLs, QR codes, screenshots, and AI-
               <option value="url">URL Scans</option>
               <option value="qr">QR Code Scans</option>
               <option value="screenshot">Screenshot OCR</option>
-              <option value="ai_image">AI Deepfake Scans</option>
               <option value="message">Message NLP Scans</option>
             </select>
           </div>

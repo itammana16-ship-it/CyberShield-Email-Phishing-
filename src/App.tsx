@@ -12,7 +12,6 @@ import { EmailScanner } from './components/scanners/EmailScanner';
 import { UrlScanner } from './components/scanners/UrlScanner';
 import { QrScanner } from './components/scanners/QrScanner';
 import { ScreenshotScanner } from './components/scanners/ScreenshotScanner';
-import { AiImageScanner } from './components/scanners/AiImageScanner';
 import { PasswordTool } from './components/tools/PasswordTool';
 import { MessageScanner } from './components/scanners/MessageScanner';
 import { HistoryPage } from './components/pages/HistoryPage';
@@ -297,14 +296,7 @@ const [currentUser, setCurrentUser] = useState<User | null>(
           />
         );
 
-      case 'ai_image':
-        return (
-          <AiImageScanner
-            currentUser={currentUser}
-            onScanComplete={handleScanComplete}
-          />
-        );
-
+      
       case 'password':
         return <PasswordTool />;
 

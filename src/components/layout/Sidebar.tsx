@@ -7,7 +7,6 @@ import {
   Globe,
   QrCode,
   Camera,
-  Image as ImageIcon,
   KeyRound,
   MessageSquare,
   BarChart3,
@@ -50,7 +49,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'url', label: 'URL Scanner', icon: Globe },
     { id: 'qr', label: 'QR Code Scan', icon: QrCode },
     { id: 'screenshot', label: 'Screenshot', icon: Camera },
-    { id: 'ai_image', label: 'AI Image Scan', icon: ImageIcon, },
     { id: 'password', label: 'Safe Password', icon: KeyRound },
     { id: 'message', label: 'Message NLP', icon: MessageSquare },
   ];

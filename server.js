@@ -466,7 +466,6 @@ async function startServer() {
             'url',
             'qr',
             'screenshot',
-            'ai_image',
             'message'
           ].includes(scan.type) ||
           !['safe', 'suspicious', 'phishing'].includes(

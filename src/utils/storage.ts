@@ -156,28 +156,7 @@ const INITIAL_SCANS: ScanResult[] = [
       'Quishing Exploit Vector': 'High (Handler Injection)'
     }
   },
-  {
-    id: 'scn_906',
-    userId: 'usr_emp_204',
-    userEmail: 'david.tech@corpnet.org',
-    type: 'ai_image',
-    title: 'Deepfake CEO Executive Profile Scan',
-    targetContent: 'executive_portrait_midjourney_v6.png',
-    threatLevel: 'phishing',
-    confidence: 97.4,
-    riskScore: 94,
-    modelUsed: 'SVM',
-    timestamp: '2026-10-24T15:20:00Z',
-    reasons: [
-      'High-frequency spectral loss: Absence of genuine sensor CMOS shot-noise in uniform facial areas.',
-      'Diffusion latent signature: Edge blurring and non-natural micro-texture repetition typical of synthetic generators.',
-      'Anomalous pupil reflection asymmetry and unnatural subsurface light scattering.'
-    ],
-    featuresExtracted: {
-      'Spectral Consistency Score': '0.24 (Synthetic Anomaly)',
-      'Generative Artifact Index': 'High (Midjourney/Flux/SD)'
-    }
-  }
+  
 ];
 
 export const DEFAULT_THEME: ThemeSettings = {

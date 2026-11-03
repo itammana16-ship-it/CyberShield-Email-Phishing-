@@ -10,7 +10,6 @@ import {
   Globe,
   QrCode,
   Camera,
-  Image as ImageIcon,
   KeyRound,
   MessageSquare,
   Download,
@@ -74,13 +73,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
       icon: Camera,
       color: 'text-purple-400'
     },
-    {
-      id: 'ai_image',
-      label: 'AI Deepfake Scan',
-      desc: 'Real Photo vs AI Synthesis',
-      icon: ImageIcon,
-      color: 'text-rose-400'
-    },
+    
     {
       id: 'password',
       label: 'Safe Password',

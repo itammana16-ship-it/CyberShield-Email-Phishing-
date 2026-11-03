@@ -23,7 +23,6 @@ export type ScanType =
   | 'url'
   | 'qr'
   | 'screenshot'
-  | 'ai_image'
   | 'message';
 
 export type ThreatLevel = 'safe' | 'suspicious' | 'phishing';
@@ -32,14 +31,14 @@ export interface ScanResult {
   id: string;
   userId: string;
   userEmail: string;
+  timestamp: string;
   type: ScanType;
   title: string;
   targetContent: string;
   threatLevel: ThreatLevel;
   confidence: number;
   riskScore: number;
-  modelUsed: 'SVM' | 'Logistic Regression' | 'Random Forest' | 'XGBoost';
-  timestamp: string;
+  modelUsed: 'SVM' | 'Logistic Regression' | 'Random Forest' | 'XGBoost'; 
   reasons: string[];
   featuresExtracted: Record<string, string | number | boolean>;
 
@@ -55,7 +54,6 @@ export interface ScanResult {
     decodedQr?: string;
     senderAddress?: string;
     spfDkimStatus?: string;
-    deepfakeScore?: number;
   };
 }
 

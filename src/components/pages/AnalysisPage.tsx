@@ -38,7 +38,6 @@ export const AnalysisPage: React.FC<AnalysisPageProps> = ({ currentUser, scans }
     url: dataset.filter(s => s.type === 'url').length,
     qr: dataset.filter(s => s.type === 'qr').length,
     screenshot: dataset.filter(s => s.type === 'screenshot').length,
-    ai_image: dataset.filter(s => s.type === 'ai_image').length,
     message: dataset.filter(s => s.type === 'message').length,
   };
 
@@ -203,7 +202,6 @@ Uses data analysis to compare real and fake threats, identify new attacks, and m
               { label: 'URL Lexical Attacks', count: vectorCounts.url, max: Math.max(total, 1), color: 'bg-blue-500' },
               { label: 'Quishing (QR Mobile Handlers)', count: vectorCounts.qr, max: Math.max(total, 1), color: 'bg-indigo-500' },
               { label: 'Screenshot / Fake Login UI', count: vectorCounts.screenshot, max: Math.max(total, 1), color: 'bg-purple-500' },
-              { label: 'AI Deepfakes & Synthetic Stamps', count: vectorCounts.ai_image, max: Math.max(total, 1), color: 'bg-rose-500' },
               { label: 'SMS & Messaging Smishing NLP', count: vectorCounts.message, max: Math.max(total, 1), color: 'bg-amber-500' },
             ].map((v, idx) => {
               const pct = Math.round((v.count / Math.max(total, 1)) * 100);

@@ -51,15 +51,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setMode('login');
     setUsername('admin');
     setEmail('admin@phishguard.com');
-    setPassword('Admin@2026');
+    setPassword('');
     setError(null);
     setSuccessMsg(null);
   };
 
   const handleQuickFillUser = () => {
+    setMode('login');
     setUsername('tammana');
     setEmail('itammana16@gmail.com');
-    setPassword('CyberGuard@123');
+    setPassword('');
     setError(null);
     setSuccessMsg(null);
   };
@@ -71,7 +72,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     if (loading) return;
 
-    // Extra protection against registration in Admin Login mode.
     if (adminOnly && mode === 'register') {
       setMode('login');
       setError('Registration is disabled for Admin Login.');
@@ -119,6 +119,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
 
       const authenticatedUser = data.user as User;
+
       // Admin Login must accept only an account with admin role.
       if (adminOnly && authenticatedUser.role !== 'admin') {
         throw new Error(
@@ -126,6 +127,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         );
       }
 
+      // Save JWT token after successful login.
+      // Backend sends the token using the property "accessToken".
+      if (mode === 'login') {
+        if (
+          typeof data.accessToken !== 'string' ||
+          !data.accessToken.trim()
+        ) {
+          throw new Error(
+            'Login token was not received from the server.'
+          );
+        }
+
+        sessionStorage.setItem(
+          'phishguard_access_token',
+          data.accessToken
+        );
+      }
+
+      // Save authenticated user information.
       Storage.saveUser(authenticatedUser);
       Storage.setActiveSession(authenticatedUser);
 
@@ -139,6 +159,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         onSuccess(authenticatedUser);
         onClose();
       }, 500);
+
     } catch (err) {
       setError(
         err instanceof Error
@@ -210,6 +231,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           )}
         </div>
 
+       
         {/* Error message */}
         {error && (
           <div className="mb-4 p-3 rounded-lg bg-rose-950/50 border border-rose-800/80 text-rose-300 text-xs flex items-center gap-2">

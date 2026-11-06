@@ -56,11 +56,11 @@ export interface ScanResult {
     senderAddress?: string;
     spfDkimStatus?: string;
     spamClassification?: 'Spam' | 'Legitimate';
-    spamModel?: 'Trained SVM';
+    spamModel?: string;
   };
   
   spamClassification?: 'Spam' | 'Legitimate';
-  spamModel?: 'Trained SVM';
+  spamModel?: string;
 }
 
 export type ThemePreset =

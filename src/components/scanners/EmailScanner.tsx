@@ -103,7 +103,7 @@ export const EmailScanner: React.FC<EmailScannerProps> = ({
     setIsScanning(true);
 
     try {
-       const response = await fetch('https://phishguard-ml-api-t91b.onrender.com/predict', {       
+       const response = await fetch('https://phishguard-candidate-svm-api.onrender.com/predict', {       
          method: 'POST',
          headers: {
           'Content-Type': 'application/json'
@@ -153,7 +153,7 @@ export const EmailScanner: React.FC<EmailScannerProps> = ({
 
         // Separate trained SVM spam classification
         spamClassification: spamOutput.prediction,
-        spamModel: 'Trained SVM'
+        spamModel: spamOutput.model
       };
 
       Storage.addScan(scanRecord);

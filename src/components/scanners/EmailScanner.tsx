@@ -165,8 +165,7 @@ export const EmailScanner: React.FC<EmailScannerProps> = ({
     } catch (error) {
       console.error('Trained SVM API Error:', error);
       alert(
-        'Trained SVM API connect hocche na. Python API server check koro.'
-      );
+          'Candidate SVM API is unavailable. Please check the Python API service.'      );
     } finally {
       setIsScanning(false);
     }
@@ -375,7 +374,7 @@ export const EmailScanner: React.FC<EmailScannerProps> = ({
                 <div className="flex items-center gap-2 mb-3">
                   <Brain className="w-5 h-5 text-cyan-400" />
                   <h3 className="text-sm font-bold text-cyan-300">
-                    Trained SVM Classification
+                    Candidate SVM Spam Classification
                   </h3>
                 </div>
 
@@ -401,7 +400,7 @@ export const EmailScanner: React.FC<EmailScannerProps> = ({
                       Model
                     </p>
                     <p className="text-sm font-semibold text-white mt-1">
-                      {currentResult.spamModel ?? 'Trained SVM'}
+                      {currentResult.spamModel ?? 'Candidate SVM'}
                     </p>
                   </div>
                 </div>

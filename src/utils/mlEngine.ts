@@ -369,12 +369,7 @@ export function runSvmEmailClassifier(
       'Extracted Links Total': features.urlCount
     },
 
-    modelComparison: {
-      svmAccuracy: 96.4,
-      logisticRegressionAccuracy: 91.8,
-      rfAccuracy: 94.2,
-      xgboostAccuracy: 95.8
-    }
+    
   };
 }
 

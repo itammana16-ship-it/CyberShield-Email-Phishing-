@@ -42,13 +42,7 @@ export interface ScanResult {
   reasons: string[];
   featuresExtracted: Record<string, string | number | boolean>;
 
-  modelComparison?: {
-    svmAccuracy: number;
-    logisticRegressionAccuracy: number;
-    rfAccuracy: number;
-    xgboostAccuracy: number;
-  };
-
+  
   
   additionalMetadata?: {
     imageSrc?: string;
@@ -56,11 +50,11 @@ export interface ScanResult {
     senderAddress?: string;
     spfDkimStatus?: string;
     spamClassification?: 'Spam' | 'Legitimate';
-    spamModel?: 'Trained SVM';
+    spamModel?: string;
   };
   
   spamClassification?: 'Spam' | 'Legitimate';
-  spamModel?: 'Trained SVM';
+  spamModel?: string;
 }
 
 export type ThemePreset =

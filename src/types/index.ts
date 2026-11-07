@@ -42,13 +42,7 @@ export interface ScanResult {
   reasons: string[];
   featuresExtracted: Record<string, string | number | boolean>;
 
-  modelComparison?: {
-    svmAccuracy: number;
-    logisticRegressionAccuracy: number;
-    rfAccuracy: number;
-    xgboostAccuracy: number;
-  };
-
+  
   
   additionalMetadata?: {
     imageSrc?: string;

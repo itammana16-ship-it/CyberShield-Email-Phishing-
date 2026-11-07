@@ -149,7 +149,6 @@ export const EmailScanner: React.FC<EmailScannerProps> = ({
         timestamp: new Date().toISOString(),
         reasons: mlOutput.reasons,
         featuresExtracted: mlOutput.featuresExtracted,
-        modelComparison: mlOutput.modelComparison,
 
         // Separate trained SVM spam classification
         spamClassification: spamOutput.prediction,

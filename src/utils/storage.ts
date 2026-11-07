@@ -57,12 +57,7 @@ const INITIAL_SCANS: ScanResult[] = [
       'SPF / DKIM Authentication': 'Failed / Spoofed',
       'Generic Impersonal Salutation': 'Present (Dear Customer)'
     },
-    modelComparison: {
-      svmAccuracy: 96.4,
-      logisticRegressionAccuracy: 91.8,
-      rfAccuracy: 94.2,
-      xgboostAccuracy: 95.8
-    }
+    
   },
   {
     id: 'scn_902',
